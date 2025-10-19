@@ -1,10 +1,16 @@
 import os
-from dotenv import load_dotenv
 import requests
 
+if os.path.exists(".env"):
+    try:
+        import dotenv
+    except ImportError:
+        print("python-dotenv not installed; skipping .env loading")
+    else:
+        dotenv.load_dotenv()
 
-load_dotenv()
-URL = "http://api.weatherapi.com/v1/current.json?"
+
+URL = "https://api.weatherapi.com/v1/current.json?"
 FILTERING = "Paris"
 API_KEY = os.getenv("API_KEY")
 
@@ -21,11 +27,25 @@ def get_weather() -> None:
     result.raise_for_status()
     data = result.json()
 
-    city = data.get("location").get("name")
-    temperature = data.get("current").get("temp_c")
-    country = data.get("location").get("country")
-    last_update = data.get("current").get("last_updated")
-    weather_condition = data.get("current").get("condition").get("text")
+    location = data.get("location")
+    if not location:
+        raise ValueError("Missing 'location' field in API response")
+
+    city = location.get("name")
+    country = location.get("country")
+
+    current = data.get("current")
+    if not current:
+        raise ValueError("Missing 'current' field in API response")
+
+    temperature = current.get("temp_c")
+    last_update = current.get("last_updated")
+
+    condition = current.get("condition")
+    if not condition:
+        raise ValueError("Missing 'condition' field in API response")
+
+    weather_condition = condition.get("text")
 
     print(
         f"Performing request to Weather API for city {city}...\n"
